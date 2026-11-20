@@ -10,6 +10,8 @@ struct SnapshotParserTests {
         #expect(snapshot.windows.map(\.name) == ["5 小時", "7 天"])
         #expect(snapshot.windows[0].remainingPercent == 72)
         #expect(snapshot.mostConstrainedWindow?.usedPercent == 61)
+        #expect(snapshot.window(for: .weekly)?.usedPercent == 61)
+        #expect(snapshot.window(for: .current)?.usedPercent == 61)
     }
 
     @Test func parsesClaudeStatusLinePayload() throws {

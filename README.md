@@ -8,6 +8,7 @@ QuotaBar 是一個本機優先的 macOS 選單列 App，用來查看 Codex 與 C
 - 選單列使用 GPT 與 Claude Code 圖示，不佔空間顯示英文名稱
 - 顯示兩者的 5 小時、每週額度與重置時間
 - 百分比可切換成「剩餘」或「已使用」
+- 選單列可切換顯示當前 limit 或 weekly limit
 - 可關閉選單列上的百分比，只保留圖示
 - 每 30 秒更新，亦可手動重新整理；上一輪尚未完成時不會重複發出請求
 - 重新整理會同時查詢 Codex 與 Claude Code；Claude 即時查詢不可用時退回最新 status-line 快照

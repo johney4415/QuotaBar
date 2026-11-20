@@ -11,6 +11,9 @@ final class QuotaStore: ObservableObject {
     @Published var displayMode: DisplayMode {
         didSet { defaults.set(displayMode.rawValue, forKey: Keys.displayMode) }
     }
+    @Published var windowSelection: QuotaWindowSelection {
+        didSet { defaults.set(windowSelection.rawValue, forKey: Keys.windowSelection) }
+    }
     @Published var showPercentages: Bool {
         didSet { defaults.set(showPercentages, forKey: Keys.showPercentages) }
     }
@@ -28,6 +31,7 @@ final class QuotaStore: ObservableObject {
 
     init() {
         displayMode = DisplayMode(rawValue: defaults.string(forKey: Keys.displayMode) ?? "") ?? .remaining
+        windowSelection = QuotaWindowSelection(rawValue: defaults.string(forKey: Keys.windowSelection) ?? "") ?? .current
         showPercentages = defaults.object(forKey: Keys.showPercentages) as? Bool ?? true
         codexIconChoice = IconChoice(rawValue: defaults.string(forKey: Keys.codexIconChoice) ?? "") ?? .brand
         claudeIconChoice = IconChoice(rawValue: defaults.string(forKey: Keys.claudeIconChoice) ?? "") ?? .brand
@@ -79,7 +83,8 @@ final class QuotaStore: ObservableObject {
             for: provider,
             snapshots: snapshots,
             mode: displayMode,
-            showPercentages: showPercentages
+            showPercentages: showPercentages,
+            windowSelection: windowSelection
         )
     }
 
@@ -89,6 +94,7 @@ final class QuotaStore: ObservableObject {
 
     private enum Keys {
         static let displayMode = "displayMode"
+        static let windowSelection = "windowSelection"
         static let showPercentages = "showPercentages"
         static let codexIconChoice = "codexIconChoice"
         static let claudeIconChoice = "claudeIconChoice"

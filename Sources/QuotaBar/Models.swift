@@ -20,10 +20,11 @@ enum MenuBarFormatter {
         for provider: ProviderKind,
         snapshots: [ProviderKind: ProviderSnapshot],
         mode: DisplayMode,
-        showPercentages: Bool
+        showPercentages: Bool,
+        windowSelection: QuotaWindowSelection = .current
     ) -> String {
         guard showPercentages else { return "" }
-        guard let window = snapshots[provider]?.mostConstrainedWindow else { return "--" }
+        guard let window = snapshots[provider]?.window(for: windowSelection) else { return "--" }
         return "\(Int(window.value(for: mode).rounded()))%"
     }
 }
@@ -38,6 +39,32 @@ enum DisplayMode: String, CaseIterable, Identifiable {
         switch self {
         case .remaining: "剩餘"
         case .used: "已使用"
+        }
+    }
+}
+
+enum QuotaWindowSelection: String, CaseIterable, Identifiable {
+    case current
+    case weekly
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .current: "當前 limit"
+        case .weekly: "Weekly limit"
+        }
+    }
+}
+
+extension ProviderSnapshot {
+    func window(for selection: QuotaWindowSelection) -> UsageWindow? {
+        switch selection {
+        case .current:
+            mostConstrainedWindow
+        case .weekly:
+            windows.first { $0.name.localizedCaseInsensitiveContains("週") || $0.name.localizedCaseInsensitiveContains("天") }
+                ?? windows.max(by: { ($0.resetsAt ?? .distantPast) < ($1.resetsAt ?? .distantPast) })
         }
     }
 }

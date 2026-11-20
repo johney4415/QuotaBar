@@ -164,6 +164,13 @@ struct MenuContentView: View {
             }
             .pickerStyle(.segmented)
 
+            Picker("選單列額度", selection: $store.windowSelection) {
+                ForEach(QuotaWindowSelection.allCases) { selection in
+                    Text(selection.label).tag(selection)
+                }
+            }
+            .pickerStyle(.segmented)
+
             VStack(alignment: .leading, spacing: 8) {
                 Text("選單列圖示")
                     .font(.caption)
