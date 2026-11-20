@@ -1,0 +1,29 @@
+import Foundation
+import Testing
+@testable import QuotaBar
+
+struct SnapshotParserTests {
+    @Test func parsesCodexWindows() throws {
+        let json = #"{"id":2,"result":{"rateLimits":{"planType":"pro","primary":{"usedPercent":28,"windowDurationMins":300,"resetsAt":1800000000},"secondary":{"usedPercent":61,"windowDurationMins":10080,"resetsAt":1800100000}}}}"#
+        let snapshot = try SnapshotParser.codex(from: Data(json.utf8))
+        #expect(snapshot.provider == .codex)
+        #expect(snapshot.windows.map(\.name) == ["5 小時", "7 天"])
+        #expect(snapshot.windows[0].remainingPercent == 72)
+        #expect(snapshot.mostConstrainedWindow?.usedPercent == 61)
+    }
+
+    @Test func parsesClaudeStatusLinePayload() throws {
+        let json = #"{"model":{"display_name":"Opus"},"rate_limits":{"five_hour":{"used_percentage":83,"resets_at":1800000000},"seven_day":{"used_percentage":40,"resets_at":1800100000}}}"#
+        let snapshot = try SnapshotParser.claude(from: Data(json.utf8))
+        #expect(snapshot.provider == .claude)
+        #expect(snapshot.windows.map(\.usedPercent) == [83, 40])
+        #expect(snapshot.detail == "Opus")
+    }
+
+    @Test func clampsPercentages() throws {
+        let json = #"{"rate_limits":{"five_hour":{"used_percentage":130,"resets_at":1800000000}}}"#
+        let snapshot = try SnapshotParser.claude(from: Data(json.utf8))
+        #expect(snapshot.windows[0].usedPercent == 100)
+        #expect(snapshot.windows[0].remainingPercent == 0)
+    }
+}
