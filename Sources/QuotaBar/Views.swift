@@ -27,6 +27,65 @@ enum BrandAssets {
     }
 }
 
+enum MenuBarRenderer {
+    static func image(
+        codexValue: String,
+        claudeValue: String,
+        showPercentages: Bool,
+        codexIcon: IconChoice,
+        claudeIcon: IconChoice
+    ) -> NSImage {
+        let iconSize: CGFloat = 11
+        let height: CGFloat = 18
+        let providerGap: CGFloat = 6
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: NSColor.black,
+        ]
+        let codexText = showPercentages ? " \(codexValue)" : ""
+        let claudeText = showPercentages ? " \(claudeValue)" : ""
+        let separator = "·"
+        let codexTextSize = (codexText as NSString).size(withAttributes: attributes)
+        let claudeTextSize = (claudeText as NSString).size(withAttributes: attributes)
+        let separatorSize = (separator as NSString).size(withAttributes: attributes)
+        let width = iconSize + codexTextSize.width
+            + providerGap + separatorSize.width + providerGap
+            + iconSize + claudeTextSize.width
+
+        let result = NSImage(size: NSSize(width: ceil(width), height: height), flipped: false) { rect in
+            var x: CGFloat = 0
+            let iconY = (rect.height - iconSize) / 2
+            let textY = (rect.height - font.capHeight) / 2 - 1
+
+            drawIcon(.codex, choice: codexIcon, in: NSRect(x: x, y: iconY, width: iconSize, height: iconSize))
+            x += iconSize
+            if showPercentages {
+                (codexText as NSString).draw(at: NSPoint(x: x, y: textY), withAttributes: attributes)
+                x += codexTextSize.width
+            }
+
+            x += providerGap
+            (separator as NSString).draw(at: NSPoint(x: x, y: textY), withAttributes: attributes)
+            x += separatorSize.width + providerGap
+
+            drawIcon(.claude, choice: claudeIcon, in: NSRect(x: x, y: iconY, width: iconSize, height: iconSize))
+            x += iconSize
+            if showPercentages {
+                (claudeText as NSString).draw(at: NSPoint(x: x, y: textY), withAttributes: attributes)
+            }
+            return true
+        }
+        result.isTemplate = true
+        return result
+    }
+
+    private static func drawIcon(_ provider: ProviderKind, choice: IconChoice, in rect: NSRect) {
+        let image = BrandAssets.menuBarImage(for: provider, choice: choice)
+        image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: 1)
+    }
+}
+
 struct ProviderBrandIcon: View {
     let provider: ProviderKind
     var size: CGFloat = 14
@@ -50,25 +109,17 @@ struct CombinedMenuBarLabel: View {
     @ObservedObject var store: QuotaStore
 
     var body: some View {
-        if store.showPercentages {
-            (
-                Text(Image(nsImage: BrandAssets.menuBarImage(for: .codex, choice: store.codexIconChoice)))
-                + Text(" \(store.menuBarValue(for: .codex))  ·  ")
-                + Text(Image(nsImage: BrandAssets.menuBarImage(for: .claude, choice: store.claudeIconChoice)))
-                + Text(" \(store.menuBarValue(for: .claude))")
-            )
-            .monospacedDigit()
-            .accessibilityLabel(
-                "Codex \(store.menuBarValue(for: .codex)), Claude Code \(store.menuBarValue(for: .claude))"
-            )
-        } else {
-            (
-                Text(Image(nsImage: BrandAssets.menuBarImage(for: .codex, choice: store.codexIconChoice)))
-                + Text("  ·  ")
-                + Text(Image(nsImage: BrandAssets.menuBarImage(for: .claude, choice: store.claudeIconChoice)))
-            )
-            .accessibilityLabel("Codex 與 Claude Code")
-        }
+        Image(nsImage: MenuBarRenderer.image(
+            codexValue: store.menuBarValue(for: .codex),
+            claudeValue: store.menuBarValue(for: .claude),
+            showPercentages: store.showPercentages,
+            codexIcon: store.codexIconChoice,
+            claudeIcon: store.claudeIconChoice
+        ))
+        .renderingMode(.template)
+        .accessibilityLabel(
+            "Codex \(store.menuBarValue(for: .codex)), Claude Code \(store.menuBarValue(for: .claude))"
+        )
     }
 }
 

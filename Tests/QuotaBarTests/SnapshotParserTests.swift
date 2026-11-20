@@ -64,4 +64,18 @@ struct SnapshotParserTests {
         #expect(BrandAssets.image(for: .codex) != nil)
         #expect(BrandAssets.image(for: .claude) != nil)
     }
+
+    @Test func rendersBothMenuBarIconsAndValuesIntoOneImage() {
+        let image = MenuBarRenderer.image(
+            codexValue: "68%",
+            claudeValue: "83%",
+            showPercentages: true,
+            codexIcon: .brand,
+            claudeIcon: .sparkles
+        )
+        #expect(image.size.width > 70)
+        #expect(image.size.height == 18)
+        #expect(image.tiffRepresentation != nil)
+        #expect(image.isTemplate)
+    }
 }
