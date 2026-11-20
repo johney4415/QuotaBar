@@ -47,6 +47,18 @@ struct ProviderMenuBarLabel: View {
     }
 }
 
+struct CombinedMenuBarLabel: View {
+    @ObservedObject var store: QuotaStore
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ProviderMenuBarLabel(store: store, provider: .codex)
+            ProviderMenuBarLabel(store: store, provider: .claude)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 struct MenuContentView: View {
     @ObservedObject var store: QuotaStore
     @State private var connectionError: String?
