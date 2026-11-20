@@ -10,6 +10,15 @@ enum BrandAssets {
         image.isTemplate = true
         return image
     }
+
+    static func menuBarImage(for provider: ProviderKind) -> NSImage {
+        let image = image(for: provider)
+            ?? NSImage(systemSymbolName: provider == .codex ? "terminal" : "sparkles", accessibilityDescription: provider.displayName)
+            ?? NSImage()
+        image.size = NSSize(width: 11, height: 11)
+        image.isTemplate = true
+        return image
+    }
 }
 
 struct ProviderBrandIcon: View {
@@ -51,11 +60,25 @@ struct CombinedMenuBarLabel: View {
     @ObservedObject var store: QuotaStore
 
     var body: some View {
-        HStack(spacing: 6) {
-            ProviderMenuBarLabel(store: store, provider: .codex)
-            ProviderMenuBarLabel(store: store, provider: .claude)
+        if store.showPercentages {
+            (
+                Text(Image(nsImage: BrandAssets.menuBarImage(for: .codex)))
+                + Text(" \(store.menuBarValue(for: .codex))  ")
+                + Text(Image(nsImage: BrandAssets.menuBarImage(for: .claude)))
+                + Text(" \(store.menuBarValue(for: .claude))")
+            )
+            .monospacedDigit()
+            .accessibilityLabel(
+                "Codex \(store.menuBarValue(for: .codex)), Claude Code \(store.menuBarValue(for: .claude))"
+            )
+        } else {
+            (
+                Text(Image(nsImage: BrandAssets.menuBarImage(for: .codex)))
+                + Text("  ")
+                + Text(Image(nsImage: BrandAssets.menuBarImage(for: .claude)))
+            )
+            .accessibilityLabel("Codex 與 Claude Code")
         }
-        .accessibilityElement(children: .combine)
     }
 }
 

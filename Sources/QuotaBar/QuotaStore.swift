@@ -28,7 +28,7 @@ final class QuotaStore: ObservableObject {
     func start() {
         guard timer == nil else { return }
         Task { await refresh() }
-        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             Task { @MainActor in await self?.refresh() }
         }
     }
