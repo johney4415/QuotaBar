@@ -57,13 +57,26 @@ Claude Code 會把 `rate_limits.five_hour` 與 `rate_limits.seven_day` 放進 st
 ~/Library/Application Support/QuotaBar/claude-status.json
 ```
 
+落盤前會移除工作目錄、transcript path、帳號資料及其他無關欄位，只留下兩個額度窗與模型顯示名稱。QuotaBar 資料夾權限為 `0700`，快照與原始 status-line 設定備份為 `0600`。
+
 如果你原本已有 Claude status line command，QuotaBar 會保存原命令、轉送同一份輸入，並把原本輸出交回 Claude Code。按「中斷 Claude」會還原原命令。
+
+## 安全性
+
+- QuotaBar 不讀取或保存 Codex、Claude 的 OAuth token、API key 或密碼。
+- 所有 provider 請求都透過使用者已安裝並登入的官方本機 CLI 執行。
+- Claude 即時查詢使用 `--safe-mode`，不載入使用者 hooks、plugins、MCP servers 或專案指令。
+- 專案沒有第三方 Swift 套件依賴；CI 的 checkout action 固定到完整 commit SHA，且不保留 GitHub credentials。
+- 本機安裝腳本使用 ad-hoc 簽章，並非 Apple notarized 發行版。請只從你信任的 checkout 建置。
+
+弱點回報方式與信任邊界請見 [SECURITY.md](SECURITY.md)。
 
 ## 已知限制
 
 - Claude 額度需要至少一個活動中的 Claude Code 工作階段提供 status-line 更新。
 - Claude Code 目前主要提供 5 小時與 7 天兩個一般額度窗；特定模型額度不一定會出現在 status-line payload。
 - Codex / Claude 的本機協定若改版，可能需要同步更新解析器。
+- App 需要讀取本機 CLI 與 `~/.claude/settings.json`，因此目前不使用 App Sandbox。
 
 ## License
 

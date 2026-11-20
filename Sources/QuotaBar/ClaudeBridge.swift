@@ -4,11 +4,9 @@ enum ClaudeBridge {
     static func run() -> Never {
         let input = FileHandle.standardInput.readDataToEndOfFile()
         do {
-            try FileManager.default.createDirectory(
-                at: ClaudeProvider.supportDirectory,
-                withIntermediateDirectories: true
-            )
-            try input.write(to: ClaudeProvider.snapshotURL, options: .atomic)
+            try LocalSecurity.ensureOwnerOnlyDirectory(ClaudeProvider.supportDirectory)
+            let snapshot = try LocalSecurity.sanitizedClaudeSnapshot(from: input)
+            try LocalSecurity.writeOwnerOnly(snapshot, to: ClaudeProvider.snapshotURL)
         } catch {
             FileHandle.standardError.write(Data("QuotaBar: \(error.localizedDescription)\n".utf8))
         }

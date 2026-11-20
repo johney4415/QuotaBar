@@ -78,4 +78,34 @@ struct SnapshotParserTests {
         #expect(image.tiffRepresentation != nil)
         #expect(image.isTemplate)
     }
+
+    @Test func sanitizesClaudeStatusPayloadBeforeWriting() throws {
+        let input = #"{"cwd":"/private/work","transcript_path":"/private/transcript.jsonl","account":{"email":"private@example.com"},"model":{"id":"claude-secret","display_name":"Opus"},"rate_limits":{"five_hour":{"used_percentage":17,"resets_at":1800000000,"internal":"remove-me"},"seven_day":{"used_percentage":34,"resets_at":1800100000},"model_scoped":{"secret":"remove-me"}}}"#
+        let data = try LocalSecurity.sanitizedClaudeSnapshot(from: Data(input.utf8))
+        let text = try #require(String(data: data, encoding: .utf8))
+
+        #expect(text.contains("used_percentage"))
+        #expect(text.contains("Opus"))
+        #expect(!text.contains("cwd"))
+        #expect(!text.contains("transcript"))
+        #expect(!text.contains("private@example.com"))
+        #expect(!text.contains("claude-secret"))
+        #expect(!text.contains("internal"))
+        #expect(!text.contains("model_scoped"))
+    }
+
+    @Test func storesLocalDataWithOwnerOnlyPermissions() throws {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent("quotabar-security-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: base) }
+
+        try LocalSecurity.ensureOwnerOnlyDirectory(base)
+        let file = base.appendingPathComponent("snapshot.json")
+        try LocalSecurity.writeOwnerOnly(Data("{}".utf8), to: file)
+
+        let directoryAttributes = try FileManager.default.attributesOfItem(atPath: base.path)
+        let fileAttributes = try FileManager.default.attributesOfItem(atPath: file.path)
+        #expect((directoryAttributes[.posixPermissions] as? NSNumber)?.intValue == 0o700)
+        #expect((fileAttributes[.posixPermissions] as? NSNumber)?.intValue == 0o600)
+    }
 }

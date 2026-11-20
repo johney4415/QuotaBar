@@ -38,13 +38,30 @@ final class ClaudeProvider: @unchecked Sendable {
         }
         let attributes = try FileManager.default.attributesOfItem(atPath: Self.snapshotURL.path)
         let modifiedAt = attributes[.modificationDate] as? Date
+        guard let sanitized = try Self.sanitizeStoredSnapshot() else {
+            throw ClaudeProviderError.notConnected
+        }
         if let modifiedAt, Date().timeIntervalSince(modifiedAt) > 3_600 {
             throw ClaudeProviderError.stale
         }
         return try SnapshotParser.claude(
-            from: Data(contentsOf: Self.snapshotURL),
+            from: sanitized,
             modifiedAt: modifiedAt
         )
+    }
+
+    @discardableResult
+    static func sanitizeStoredSnapshot() throws -> Data? {
+        guard FileManager.default.fileExists(atPath: snapshotURL.path) else { return nil }
+        let original = try Data(contentsOf: snapshotURL)
+        let sanitized = try LocalSecurity.sanitizedClaudeSnapshot(from: original)
+        try LocalSecurity.ensureOwnerOnlyDirectory(supportDirectory)
+        if sanitized != original {
+            try LocalSecurity.writeOwnerOnly(sanitized, to: snapshotURL)
+        } else {
+            try LocalSecurity.enforceOwnerOnlyFile(snapshotURL)
+        }
+        return sanitized
     }
 
     func fetchLatest() async throws -> ProviderSnapshot {
@@ -159,16 +176,24 @@ enum ClaudeConnectionManager {
         return command.contains("--claude-statusline-bridge")
     }
 
+    static func hardenExistingFiles() {
+        try? LocalSecurity.ensureOwnerOnlyDirectory(ClaudeProvider.supportDirectory)
+        _ = try? ClaudeProvider.sanitizeStoredSnapshot()
+        if FileManager.default.fileExists(atPath: ClaudeProvider.originalStatusLineURL.path) {
+            try? LocalSecurity.enforceOwnerOnlyFile(ClaudeProvider.originalStatusLineURL)
+        }
+        if FileManager.default.fileExists(atPath: settingsURL.path) {
+            try? LocalSecurity.enforceOwnerOnlyFile(settingsURL)
+        }
+    }
+
     static func connect() throws {
         let fileManager = FileManager.default
         try fileManager.createDirectory(
             at: settingsURL.deletingLastPathComponent(),
             withIntermediateDirectories: true
         )
-        try fileManager.createDirectory(
-            at: ClaudeProvider.supportDirectory,
-            withIntermediateDirectories: true
-        )
+        try LocalSecurity.ensureOwnerOnlyDirectory(ClaudeProvider.supportDirectory)
 
         var root: [String: Any] = [:]
         if let data = try? Data(contentsOf: settingsURL), !data.isEmpty {
@@ -179,7 +204,9 @@ enum ClaudeConnectionManager {
            let command = existing["command"] as? String,
            !command.contains("--claude-statusline-bridge") {
             let original = try JSONSerialization.data(withJSONObject: existing, options: [.prettyPrinted, .sortedKeys])
-            try original.write(to: ClaudeProvider.originalStatusLineURL, options: .atomic)
+            try LocalSecurity.writeOwnerOnly(original, to: ClaudeProvider.originalStatusLineURL)
+        } else if (root["statusLine"] as? [String: Any]) == nil {
+            try? fileManager.removeItem(at: ClaudeProvider.originalStatusLineURL)
         }
 
         guard let executable = Bundle.main.executableURL else {
@@ -193,7 +220,7 @@ enum ClaudeConnectionManager {
         ]
 
         let data = try JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys])
-        try data.write(to: settingsURL, options: .atomic)
+        try LocalSecurity.writeOwnerOnly(data, to: settingsURL)
     }
 
     static func disconnect() throws {
@@ -208,7 +235,7 @@ enum ClaudeConnectionManager {
             root.removeValue(forKey: "statusLine")
         }
         let updated = try JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys])
-        try updated.write(to: settingsURL, options: .atomic)
+        try LocalSecurity.writeOwnerOnly(updated, to: settingsURL)
         try? FileManager.default.removeItem(at: ClaudeProvider.originalStatusLineURL)
     }
 }

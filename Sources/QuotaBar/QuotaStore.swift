@@ -31,6 +31,7 @@ final class QuotaStore: ObservableObject {
         showPercentages = defaults.object(forKey: Keys.showPercentages) as? Bool ?? true
         codexIconChoice = IconChoice(rawValue: defaults.string(forKey: Keys.codexIconChoice) ?? "") ?? .brand
         claudeIconChoice = IconChoice(rawValue: defaults.string(forKey: Keys.claudeIconChoice) ?? "") ?? .brand
+        ClaudeConnectionManager.hardenExistingFiles()
     }
 
     func start() {
