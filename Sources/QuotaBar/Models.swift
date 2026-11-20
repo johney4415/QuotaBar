@@ -42,6 +42,33 @@ enum DisplayMode: String, CaseIterable, Identifiable {
     }
 }
 
+enum IconChoice: String, CaseIterable, Identifiable {
+    case brand
+    case terminal
+    case sparkles
+    case chip
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .brand: "品牌"
+        case .terminal: "終端機"
+        case .sparkles: "星芒"
+        case .chip: "晶片"
+        }
+    }
+
+    var systemSymbolName: String? {
+        switch self {
+        case .brand: nil
+        case .terminal: "terminal"
+        case .sparkles: "sparkles"
+        case .chip: "cpu"
+        }
+    }
+}
+
 struct UsageWindow: Codable, Equatable, Identifiable {
     var id: String { name }
     let name: String
@@ -129,6 +156,36 @@ enum SnapshotParser {
             windows: windows,
             updatedAt: modifiedAt ?? now,
             detail: (root["model"] as? [String: Any])?["display_name"] as? String
+        )
+    }
+
+    static func claudeControlResponse(from data: Data, now: Date = Date()) throws -> ProviderSnapshot {
+        let object = try JSONSerialization.jsonObject(with: data)
+        guard let root = object as? [String: Any],
+              let envelope = root["response"] as? [String: Any],
+              envelope["subtype"] as? String == "success",
+              let payload = envelope["response"] as? [String: Any],
+              let rateLimits = payload["rate_limits"] as? [String: Any]
+        else { throw SnapshotParserError.missingRateLimits }
+
+        let mappings = [("five_hour", "5 小時"), ("seven_day", "7 天")]
+        let windows = mappings.compactMap { key, label -> UsageWindow? in
+            guard let value = rateLimits[key] as? [String: Any],
+                  let used = number(value["used_percentage"] ?? value["utilization"])
+            else { return nil }
+            return UsageWindow(
+                name: label,
+                usedPercent: min(100, max(0, used)),
+                resetsAt: unixDate(value["resets_at"])
+            )
+        }
+        guard !windows.isEmpty else { throw SnapshotParserError.missingRateLimits }
+
+        return ProviderSnapshot(
+            provider: .claude,
+            windows: windows,
+            updatedAt: now,
+            detail: payload["subscription_type"] as? String
         )
     }
 

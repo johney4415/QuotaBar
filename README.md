@@ -10,6 +10,8 @@ QuotaBar 是一個本機優先的 macOS 選單列 App，用來查看 Codex 與 C
 - 百分比可切換成「剩餘」或「已使用」
 - 可關閉選單列上的百分比，只保留圖示
 - 每 30 秒更新，亦可手動重新整理；上一輪尚未完成時不會重複發出請求
+- 重新整理會同時查詢 Codex 與 Claude Code；Claude 即時查詢不可用時退回最新 status-line 快照
+- Codex 與 Claude Code 的選單列圖示可分別更換並自動保存
 - 不收集帳號密碼，不建立雲端後端
 - Claude status line 連線可復原；若原本已有 status line，QuotaBar 會保留並轉送輸出
 

@@ -11,8 +11,14 @@ enum BrandAssets {
         return image
     }
 
-    static func menuBarImage(for provider: ProviderKind) -> NSImage {
-        let image = image(for: provider)
+    static func menuBarImage(for provider: ProviderKind, choice: IconChoice) -> NSImage {
+        let selected: NSImage?
+        if let symbolName = choice.systemSymbolName {
+            selected = NSImage(systemSymbolName: symbolName, accessibilityDescription: provider.displayName)
+        } else {
+            selected = image(for: provider)
+        }
+        let image = selected
             ?? NSImage(systemSymbolName: provider == .codex ? "terminal" : "sparkles", accessibilityDescription: provider.displayName)
             ?? NSImage()
         image.size = NSSize(width: 11, height: 11)
@@ -40,31 +46,15 @@ struct ProviderBrandIcon: View {
 
 }
 
-struct ProviderMenuBarLabel: View {
-    @ObservedObject var store: QuotaStore
-    let provider: ProviderKind
-
-    var body: some View {
-        HStack(spacing: 3) {
-            ProviderBrandIcon(provider: provider, size: 11)
-                .accessibilityLabel(provider.displayName)
-            if store.showPercentages {
-                Text(store.menuBarValue(for: provider))
-                    .monospacedDigit()
-            }
-        }
-    }
-}
-
 struct CombinedMenuBarLabel: View {
     @ObservedObject var store: QuotaStore
 
     var body: some View {
         if store.showPercentages {
             (
-                Text(Image(nsImage: BrandAssets.menuBarImage(for: .codex)))
-                + Text(" \(store.menuBarValue(for: .codex))  ")
-                + Text(Image(nsImage: BrandAssets.menuBarImage(for: .claude)))
+                Text(Image(nsImage: BrandAssets.menuBarImage(for: .codex, choice: store.codexIconChoice)))
+                + Text(" \(store.menuBarValue(for: .codex))  ·  ")
+                + Text(Image(nsImage: BrandAssets.menuBarImage(for: .claude, choice: store.claudeIconChoice)))
                 + Text(" \(store.menuBarValue(for: .claude))")
             )
             .monospacedDigit()
@@ -73,9 +63,9 @@ struct CombinedMenuBarLabel: View {
             )
         } else {
             (
-                Text(Image(nsImage: BrandAssets.menuBarImage(for: .codex)))
-                + Text("  ")
-                + Text(Image(nsImage: BrandAssets.menuBarImage(for: .claude)))
+                Text(Image(nsImage: BrandAssets.menuBarImage(for: .codex, choice: store.codexIconChoice)))
+                + Text("  ·  ")
+                + Text(Image(nsImage: BrandAssets.menuBarImage(for: .claude, choice: store.claudeIconChoice)))
             )
             .accessibilityLabel("Codex 與 Claude Code")
         }
@@ -100,7 +90,7 @@ struct MenuContentView: View {
                     Image(systemName: "arrow.clockwise")
                 }
                 .buttonStyle(.plain)
-                .help("立即更新")
+                .help("同時更新 Codex 與 Claude Code")
             }
 
             ForEach(ProviderKind.allCases) { provider in
@@ -122,6 +112,38 @@ struct MenuContentView: View {
                 }
             }
             .pickerStyle(.segmented)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("選單列圖示")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                HStack {
+                    Picker("Codex", selection: $store.codexIconChoice) {
+                        ForEach(IconChoice.allCases) { choice in
+                            Text(choice.label).tag(choice)
+                        }
+                    }
+                    Picker("Claude", selection: $store.claudeIconChoice) {
+                        ForEach(IconChoice.allCases) { choice in
+                            Text(choice.label).tag(choice)
+                        }
+                    }
+                }
+            }
+
+            HStack {
+                Label(
+                    "Codex 自動連線",
+                    systemImage: store.snapshots[.codex] == nil ? "circle.dashed" : "checkmark.circle.fill"
+                )
+                Spacer()
+                Label(
+                    store.claudeConnected ? "Claude 已連線" : "Claude 未連線",
+                    systemImage: store.claudeConnected ? "checkmark.circle.fill" : "circle.dashed"
+                )
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
 
             HStack {
                 Button(store.claudeConnected ? "中斷 Claude" : "連接 Claude Code") {

@@ -20,6 +20,13 @@ struct SnapshotParserTests {
         #expect(snapshot.detail == "Opus")
     }
 
+    @Test func parsesClaudeLiveUsageResponse() throws {
+        let json = #"{"type":"control_response","response":{"subtype":"success","request_id":"quota-bar","response":{"subscription_type":"max","rate_limits_available":true,"rate_limits":{"five_hour":{"utilization":13,"resets_at":1800000000},"seven_day":{"utilization":42,"resets_at":1800100000}}}}}"#
+        let snapshot = try SnapshotParser.claudeControlResponse(from: Data(json.utf8))
+        #expect(snapshot.windows.map(\.usedPercent) == [13, 42])
+        #expect(snapshot.detail == "max")
+    }
+
     @Test func clampsPercentages() throws {
         let json = #"{"rate_limits":{"five_hour":{"used_percentage":130,"resets_at":1800000000}}}"#
         let snapshot = try SnapshotParser.claude(from: Data(json.utf8))

@@ -14,6 +14,12 @@ final class QuotaStore: ObservableObject {
     @Published var showPercentages: Bool {
         didSet { defaults.set(showPercentages, forKey: Keys.showPercentages) }
     }
+    @Published var codexIconChoice: IconChoice {
+        didSet { defaults.set(codexIconChoice.rawValue, forKey: Keys.codexIconChoice) }
+    }
+    @Published var claudeIconChoice: IconChoice {
+        didSet { defaults.set(claudeIconChoice.rawValue, forKey: Keys.claudeIconChoice) }
+    }
 
     private let defaults = UserDefaults.standard
     private let codexProvider = CodexProvider()
@@ -23,6 +29,8 @@ final class QuotaStore: ObservableObject {
     init() {
         displayMode = DisplayMode(rawValue: defaults.string(forKey: Keys.displayMode) ?? "") ?? .remaining
         showPercentages = defaults.object(forKey: Keys.showPercentages) as? Bool ?? true
+        codexIconChoice = IconChoice(rawValue: defaults.string(forKey: Keys.codexIconChoice) ?? "") ?? .brand
+        claudeIconChoice = IconChoice(rawValue: defaults.string(forKey: Keys.claudeIconChoice) ?? "") ?? .brand
     }
 
     func start() {
@@ -46,7 +54,7 @@ final class QuotaStore: ObservableObject {
         }
 
         do {
-            snapshots[.claude] = try claudeProvider.fetch()
+            snapshots[.claude] = try await claudeProvider.fetchLatest()
             errors.removeValue(forKey: .claude)
         } catch {
             errors[.claude] = error.localizedDescription
@@ -74,8 +82,14 @@ final class QuotaStore: ObservableObject {
         )
     }
 
+    func iconChoice(for provider: ProviderKind) -> IconChoice {
+        provider == .codex ? codexIconChoice : claudeIconChoice
+    }
+
     private enum Keys {
         static let displayMode = "displayMode"
         static let showPercentages = "showPercentages"
+        static let codexIconChoice = "codexIconChoice"
+        static let claudeIconChoice = "claudeIconChoice"
     }
 }
