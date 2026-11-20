@@ -9,15 +9,22 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .codex: "Codex"
-        case .claude: "Claude"
+        case .claude: "Claude Code"
         }
     }
 
-    var shortName: String {
-        switch self {
-        case .codex: "C"
-        case .claude: "A"
-        }
+}
+
+enum MenuBarFormatter {
+    static func value(
+        for provider: ProviderKind,
+        snapshots: [ProviderKind: ProviderSnapshot],
+        mode: DisplayMode,
+        showPercentages: Bool
+    ) -> String {
+        guard showPercentages else { return "" }
+        guard let window = snapshots[provider]?.mostConstrainedWindow else { return "--" }
+        return "\(Int(window.value(for: mode).rounded()))%"
     }
 }
 

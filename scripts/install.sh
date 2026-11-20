@@ -11,6 +11,8 @@ swift build -c release
 mkdir -p "$app_bundle/Contents/MacOS" "$app_bundle/Contents/Resources"
 cp .build/release/quota-bar "$app_bundle/Contents/MacOS/quota-bar"
 cp LICENSE "$app_bundle/Contents/Resources/LICENSE"
+cp THIRD_PARTY_NOTICES.md "$app_bundle/Contents/Resources/THIRD_PARTY_NOTICES.md"
+ditto .build/release/QuotaBar_QuotaBar.bundle "$app_bundle/Contents/Resources/QuotaBar_QuotaBar.bundle"
 
 plutil -create xml1 "$app_bundle/Contents/Info.plist"
 plutil -replace CFBundleName -string "QuotaBar" "$app_bundle/Contents/Info.plist"

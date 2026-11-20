@@ -27,7 +27,7 @@ struct QuotaBarApp: App {
             MenuContentView(store: store)
                 .task { store.start() }
         } label: {
-            Text(store.menuBarTitle)
+            MenuBarLabel(store: store)
         }
         .menuBarExtraStyle(.window)
     }

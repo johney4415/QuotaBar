@@ -26,4 +26,35 @@ struct SnapshotParserTests {
         #expect(snapshot.windows[0].usedPercent == 100)
         #expect(snapshot.windows[0].remainingPercent == 0)
     }
+
+    @Test func menuBarAlwaysShowsBothProviders() throws {
+        let json = #"{"id":2,"result":{"rateLimits":{"primary":{"usedPercent":28,"windowDurationMins":300,"resetsAt":1800000000}}}}"#
+        let codex = try SnapshotParser.codex(from: Data(json.utf8))
+
+        let codexValue = MenuBarFormatter.value(
+            for: .codex,
+            snapshots: [.codex: codex],
+            mode: .remaining,
+            showPercentages: true
+        )
+
+        #expect(codexValue == "72%")
+        #expect(MenuBarFormatter.value(
+            for: .claude,
+            snapshots: [.codex: codex],
+            mode: .remaining,
+            showPercentages: true
+        ) == "--")
+        #expect(MenuBarFormatter.value(
+            for: .codex,
+            snapshots: [:],
+            mode: .remaining,
+            showPercentages: false
+        ).isEmpty)
+    }
+
+    @Test func brandIconsLoadAsImages() {
+        #expect(BrandAssets.image(for: .codex) != nil)
+        #expect(BrandAssets.image(for: .claude) != nil)
+    }
 }

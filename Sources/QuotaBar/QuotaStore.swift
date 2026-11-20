@@ -65,13 +65,13 @@ final class QuotaStore: ObservableObject {
         snapshots.removeValue(forKey: .claude)
     }
 
-    var menuBarTitle: String {
-        guard showPercentages else { return "◔" }
-        let parts = ProviderKind.allCases.compactMap { provider -> String? in
-            guard let window = snapshots[provider]?.mostConstrainedWindow else { return nil }
-            return "\(provider.shortName) \(Int(window.value(for: displayMode).rounded()))%"
-        }
-        return parts.isEmpty ? "額度 --" : parts.joined(separator: " · ")
+    func menuBarValue(for provider: ProviderKind) -> String {
+        MenuBarFormatter.value(
+            for: provider,
+            snapshots: snapshots,
+            mode: displayMode,
+            showPercentages: showPercentages
+        )
     }
 
     private enum Keys {

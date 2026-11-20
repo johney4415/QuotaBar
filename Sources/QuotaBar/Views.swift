@@ -1,6 +1,57 @@
 import AppKit
 import SwiftUI
 
+enum BrandAssets {
+    static func image(for provider: ProviderKind) -> NSImage? {
+        let name = provider == .codex ? "gpt" : "claude-code"
+        guard let url = Bundle.module.url(forResource: name, withExtension: "svg"),
+              let image = NSImage(contentsOf: url)
+        else { return nil }
+        image.isTemplate = true
+        return image
+    }
+}
+
+struct ProviderBrandIcon: View {
+    let provider: ProviderKind
+    var size: CGFloat = 14
+
+    var body: some View {
+        if let image = BrandAssets.image(for: provider) {
+            Image(nsImage: image)
+                .resizable()
+                .renderingMode(.template)
+                .scaledToFit()
+                .frame(width: size, height: size)
+        } else {
+            Image(systemName: provider == .codex ? "terminal" : "sparkles")
+                .frame(width: size, height: size)
+        }
+    }
+
+}
+
+struct MenuBarLabel: View {
+    @ObservedObject var store: QuotaStore
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(Array(ProviderKind.allCases.enumerated()), id: \.element.id) { index, provider in
+                if index > 0 {
+                    Text("·")
+                        .foregroundStyle(.secondary)
+                }
+                ProviderBrandIcon(provider: provider, size: 13)
+                    .accessibilityLabel(provider.displayName)
+                if store.showPercentages {
+                    Text(store.menuBarValue(for: provider))
+                        .monospacedDigit()
+                }
+            }
+        }
+    }
+}
+
 struct MenuContentView: View {
     @ObservedObject var store: QuotaStore
     @State private var connectionError: String?
@@ -81,7 +132,7 @@ private struct ProviderSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             HStack {
-                Image(systemName: provider == .codex ? "terminal" : "sparkles")
+                ProviderBrandIcon(provider: provider, size: 16)
                 Text(provider.displayName).font(.headline)
                 Spacer()
                 if let updatedAt = snapshot?.updatedAt {

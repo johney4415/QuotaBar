@@ -8,7 +8,10 @@ let package = Package(
         .executable(name: "quota-bar", targets: ["QuotaBar"]),
     ],
     targets: [
-        .executableTarget(name: "QuotaBar"),
+        .executableTarget(
+            name: "QuotaBar",
+            resources: [.process("Resources")]
+        ),
         .testTarget(name: "QuotaBarTests", dependencies: ["QuotaBar"]),
     ],
     swiftLanguageModes: [.v5]
