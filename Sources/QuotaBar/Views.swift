@@ -141,7 +141,7 @@ struct MenuContentView: View {
                     Image(systemName: "arrow.clockwise")
                 }
                 .buttonStyle(.plain)
-                .help("同時更新 Codex 與 Claude Code")
+                .help("強制重新連線並更新 Codex 與 Claude Code 額度")
             }
 
             ForEach(ProviderKind.allCases) { provider in
@@ -191,28 +191,26 @@ struct MenuContentView: View {
 
             HStack {
                 Label(
-                    "Codex 自動連線",
-                    systemImage: store.snapshots[.codex] == nil ? "circle.dashed" : "checkmark.circle.fill"
+                    store.codexConnected ? "Codex 已連線" : "Codex 未連線",
+                    systemImage: store.codexConnected ? "checkmark.circle.fill" : "xmark.circle.fill"
                 )
                 Spacer()
                 Label(
                     store.claudeConnected ? "Claude 已連線" : "Claude 未連線",
-                    systemImage: store.claudeConnected ? "checkmark.circle.fill" : "circle.dashed"
+                    systemImage: store.claudeConnected ? "checkmark.circle.fill" : "xmark.circle.fill"
                 )
             }
             .font(.caption)
             .foregroundStyle(.secondary)
 
             HStack {
-                Button(store.claudeConnected ? "中斷 Claude" : "連接 Claude Code") {
-                    do {
-                        if store.claudeConnected {
-                            try store.disconnectClaude()
-                        } else {
+                if !store.claudeBridgeInstalled {
+                    Button("連接 Claude Code") {
+                        do {
                             try store.connectClaude()
+                        } catch {
+                            connectionError = error.localizedDescription
                         }
-                    } catch {
-                        connectionError = error.localizedDescription
                     }
                 }
                 Spacer()

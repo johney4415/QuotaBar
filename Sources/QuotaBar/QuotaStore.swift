@@ -6,7 +6,9 @@ final class QuotaStore: ObservableObject {
     @Published private(set) var snapshots: [ProviderKind: ProviderSnapshot] = [:]
     @Published private(set) var errors: [ProviderKind: String] = [:]
     @Published private(set) var isRefreshing = false
-    @Published var claudeConnected = ClaudeConnectionManager.isConnected()
+    @Published private(set) var codexConnected = false
+    @Published private(set) var claudeConnected = false
+    @Published private(set) var claudeBridgeInstalled = ClaudeConnectionManager.isConnected()
 
     @Published var displayMode: DisplayMode {
         didSet { defaults.set(displayMode.rawValue, forKey: Keys.displayMode) }
@@ -54,26 +56,31 @@ final class QuotaStore: ObservableObject {
         do {
             snapshots[.codex] = try await codexProvider.fetch()
             errors.removeValue(forKey: .codex)
+            codexConnected = true
         } catch {
             errors[.codex] = error.localizedDescription
+            codexConnected = false
         }
 
         do {
             snapshots[.claude] = try await claudeProvider.fetchLatest()
             errors.removeValue(forKey: .claude)
+            claudeConnected = true
         } catch {
             errors[.claude] = error.localizedDescription
+            claudeConnected = false
         }
-        claudeConnected = ClaudeConnectionManager.isConnected()
+        claudeBridgeInstalled = ClaudeConnectionManager.isConnected()
     }
 
     func connectClaude() throws {
         try ClaudeConnectionManager.connect()
-        claudeConnected = true
+        claudeBridgeInstalled = true
     }
 
     func disconnectClaude() throws {
         try ClaudeConnectionManager.disconnect()
+        claudeBridgeInstalled = false
         claudeConnected = false
         snapshots.removeValue(forKey: .claude)
     }

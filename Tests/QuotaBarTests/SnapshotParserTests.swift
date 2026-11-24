@@ -11,7 +11,7 @@ struct SnapshotParserTests {
         #expect(snapshot.windows[0].remainingPercent == 72)
         #expect(snapshot.mostConstrainedWindow?.usedPercent == 61)
         #expect(snapshot.window(for: .weekly)?.usedPercent == 61)
-        #expect(snapshot.window(for: .current)?.usedPercent == 61)
+        #expect(snapshot.window(for: .current)?.usedPercent == 28)
     }
 
     @Test func parsesClaudeStatusLinePayload() throws {
@@ -20,6 +20,8 @@ struct SnapshotParserTests {
         #expect(snapshot.provider == .claude)
         #expect(snapshot.windows.map(\.usedPercent) == [83, 40])
         #expect(snapshot.detail == "Opus")
+        #expect(snapshot.window(for: .weekly)?.usedPercent == 40)
+        #expect(snapshot.window(for: .current)?.usedPercent == 83)
     }
 
     @Test func parsesClaudeLiveUsageResponse() throws {

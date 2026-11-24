@@ -61,11 +61,20 @@ extension ProviderSnapshot {
     func window(for selection: QuotaWindowSelection) -> UsageWindow? {
         switch selection {
         case .current:
-            mostConstrainedWindow
+            windows.first { !$0.isWeeklyWindow } ?? mostConstrainedWindow
         case .weekly:
-            windows.first { $0.name.localizedCaseInsensitiveContains("週") || $0.name.localizedCaseInsensitiveContains("天") }
+            windows.first(where: \.isWeeklyWindow)
                 ?? windows.max(by: { ($0.resetsAt ?? .distantPast) < ($1.resetsAt ?? .distantPast) })
         }
+    }
+}
+
+private extension UsageWindow {
+    var isWeeklyWindow: Bool {
+        name.localizedCaseInsensitiveContains("週")
+            || name.localizedCaseInsensitiveContains("week")
+            || name.localizedCaseInsensitiveContains("天")
+            || name.localizedCaseInsensitiveContains("7d")
     }
 }
 
